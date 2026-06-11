@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+
+# Secrets
+config.json
+
+# Virtual Environment
+.venv/
+venv/
+
+# VSCode
+.vscode/
