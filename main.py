@@ -5,7 +5,7 @@ from typing import Any, Dict
 
 import requests
 
-from dandan_api import ConfigError, load_config, match_video
+from dandan_api import ConfigError, calculate_file_hash, load_config, match_video
 
 
 def print_match_result(result: Dict[str, Any]) -> None:
@@ -47,9 +47,9 @@ def main() -> int:
         print(f"File not found: {video_path}", file=sys.stderr)
         return 1
 
-    file_name = video_path.stem
+    file_name = video_path.name
     file_size = video_path.stat().st_size
-    file_hash = ""
+    file_hash = calculate_file_hash(video_path)
 
     print(f"fileName: {file_name}")
     print(f"fileSize: {file_size}")

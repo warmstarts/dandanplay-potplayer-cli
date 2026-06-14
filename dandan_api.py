@@ -11,6 +11,7 @@ import requests
 
 API_BASE_URL = "https://api.dandanplay.net"
 MATCH_PATH = "/api/v2/match"
+DANDANPLAY_HASH_BYTES = 16 * 1024 * 1024
 
 
 class ConfigError(RuntimeError):
@@ -76,6 +77,14 @@ def build_auth_headers(config: Dict[str, str], path: str) -> Dict[str, str]:
     return headers
 
 
+def calculate_file_hash(video_path: Path) -> str:
+    """Return the dandanplay fileHash: MD5 of the first 16 MiB."""
+    md5 = hashlib.md5()
+    with video_path.open("rb") as f:
+        md5.update(f.read(DANDANPLAY_HASH_BYTES))
+    return md5.hexdigest()
+
+
 def match_video(
     *,
     file_name: str,
@@ -91,6 +100,9 @@ def match_video(
         "fileHash": file_hash,
         "fileSize": file_size,
     }
+
+    print("payload:")
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
 
     response = requests.post(
         url,
