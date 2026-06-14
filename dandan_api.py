@@ -11,6 +11,11 @@ import requests
 
 API_BASE_URL = "https://api.dandanplay.net"
 MATCH_PATH = "/api/v2/match"
+COMMENT_PATH_TEMPLATE = "/api/v2/comment/{episode_id}"
+COMMENT_QUERY_PARAMS = {
+    "withRelated": "true",
+    "chConvert": 1,
+}
 DANDANPLAY_HASH_BYTES = 16 * 1024 * 1024
 
 
@@ -93,7 +98,8 @@ def match_video(
     config: Optional[Dict[str, str]] = None,
     timeout: float = 15.0,
 ) -> Dict[str, Any]:
-    config = config or load_config()
+    if config is None:
+        config = load_config()
     url = f"{API_BASE_URL}{MATCH_PATH}"
     payload = {
         "fileName": file_name,
@@ -112,3 +118,52 @@ def match_video(
     )
     response.raise_for_status()
     return response.json()
+
+
+def build_comment_url(episode_id: int) -> str:
+    path = COMMENT_PATH_TEMPLATE.format(episode_id=episode_id)
+    return requests.Request(
+        "GET",
+        f"{API_BASE_URL}{path}",
+        params=COMMENT_QUERY_PARAMS,
+    ).prepare().url
+
+
+def fetch_comments(
+    *,
+    episode_id: int,
+    config: Dict[str, str],
+    timeout: float = 30.0,
+) -> Any:
+    path = COMMENT_PATH_TEMPLATE.format(episode_id=episode_id)
+    url = build_comment_url(episode_id)
+    print(f"comment request: GET {url}")
+
+    response = requests.get(
+        url,
+        headers=build_auth_headers(config, path),
+        allow_redirects=True,
+        timeout=timeout,
+    )
+    response.raise_for_status()
+    comment_result = response.json()
+    print_comment_structure(comment_result)
+    return comment_result
+
+
+def print_comment_structure(comment_result: Any) -> None:
+    print(f"comment_result type: {type(comment_result).__name__}")
+
+    if isinstance(comment_result, dict):
+        print(f"comment_result keys: {list(comment_result.keys())}")
+        print("comment_result key types:")
+        for key, value in comment_result.items():
+            print(f"  {key}: {type(value).__name__}")
+        data = comment_result.get("data")
+        if isinstance(data, dict):
+            print(f"comment_result data keys: {list(data.keys())}")
+    elif isinstance(comment_result, list):
+        print(f"comment_result length: {len(comment_result)}")
+        print("comment_result first 3 items:")
+        for index, item in enumerate(comment_result[:3], start=1):
+            print(f"  [{index}] {item!r}")
